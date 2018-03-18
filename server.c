@@ -31,22 +31,23 @@ struct {
   char *ext;
   char *filetype;
 } extensions [] = {
-  {"gif", "image/gif" },  
-  {"jpg", "image/jpeg"}, 
-  {"jpeg","image/jpeg"},
-  {"png", "image/png" },  
-  {"zip", "image/zip" },  
-  {"gz",  "image/gz"  },  
-  {"tar", "image/tar" },  
-  {"htm", "text/html" },  
-  {"html", "text/html" },  
-  {"php", "image/php" },  
-  {"cgi", "text/cgi"  },  
-  {"asp", "text/asp"   },  
-  {"jsp", "image/jsp" },  
-  {"xml", "text/xml"  },  
-  {"js", "text/js"   },
-  {"css","test/css"   }, 
+  {"gif",  "image/gif"    },  
+  {"jpg",  "image/jpeg"   }, 
+  {"jpeg", "image/jpeg"   },
+  {"png",  "image/png"    }, 
+  {"ico",  "image/x-icon" }, 
+  {"zip",  "image/zip"    },  
+  {"gz",   "image/gz"     },  
+  {"tar",  "image/tar"    },  
+  {"htm",  "text/html"    },  
+  {"html", "text/html"    },  
+  {"php",  "image/php"    },  
+  {"cgi",  "text/cgi"     },  
+  {"asp",  "text/asp"     },  
+  {"jsp",  "image/jsp"    },  
+  {"xml",  "text/xml"     },  
+  {"js",   "text/js"      },
+  {"css",  "test/css"     }, 
   {0,0} 
 };
 
@@ -57,15 +58,15 @@ void server_log(int type, char *s1, char *s2, int num)
 
   switch (type) {
     case ERROR: 
-      (void)sprintf(logbuffer,"ERROR: %s:%s Errno=%d exiting pid=%d",s1, s2, errno,getpid()); 
+      (void)snprintf(logbuffer, sizeof(logbuffer), "ERROR: %s:%s Errno=%d exiting pid=%d", s1, s2, errno, getpid()); 
       break;
     case SORRY: 
-      (void)sprintf(logbuffer, "<HTML><BODY><H1>Web Server Sorry: %s %s</H1></BODY></HTML>\r\n", s1, s2);
+      (void)snprintf(logbuffer, sizeof(logbuffer), "<HTML><BODY><H1>Web Server Sorry: %s %s</H1></BODY></HTML>\r\n", s1, s2);
       (void)write(num,logbuffer,strlen(logbuffer));
-      (void)sprintf(logbuffer,"SORRY: %s:%s",s1, s2); 
+      (void)snprintf(logbuffer, sizeof(logbuffer), "SORRY: %s:%s",s1, s2); 
       break;
     case LOG: 
-      (void)sprintf(logbuffer," INFO: %s:%s:%d",s1, s2,num); 
+      (void)snprintf(logbuffer, sizeof(logbuffer), "INFO: %s:%s:%d",s1, s2,num); 
       break;
   }  
   
@@ -118,7 +119,7 @@ void web(int fd, int hit)
   }
 
   if( !strncmp(&buffer[0], "GET /\0",6) || !strncmp(&buffer[0], "get /\0",6) ) {
-    (void)strcpy(buffer, "GET /index.html");
+    (void)strlcpy(buffer, "GET /index.html", sizeof(buffer));
   }
 
   buflen = strlen(buffer);
@@ -138,7 +139,7 @@ void web(int fd, int hit)
 
   server_log(LOG, "SEND", &buffer[5], hit);
 
-  (void)sprintf(buffer, "HTTP/1.0 200 OK\r\nContent-Type: %s\r\n\r\n", fstr);
+  (void)snprintf(buffer, sizeof(buffer), "HTTP/1.0 200 OK\r\nContent-Type: %s\r\n\r\n", fstr);
   (void)write(fd, buffer, strlen(buffer));
 
   while (  (ret = read(file_fd, buffer, BUFSIZE)) > 0 ) {
@@ -157,40 +158,14 @@ int main(int argc, char **argv)
   socklen_t length;
   static struct sockaddr_in cli_addr; 
   static struct sockaddr_in serv_addr;
-  char char_port[5];
-
-  /*
-  if( argc < 3  || argc > 3 || !strcmp(argv[1], "-?") ) {
-    (void)printf("usage: server [port] [server directory] &"
-  "\tExample: server 80 ./ &\n\n"
-  "\tOnly Supports:");
-    for(i=0; extensions[i].ext != 0; i++) {
-      (void)printf(" %s",extensions[i].ext);
-    }
-
-    (void)printf("\n\tNot Supported: directories / /etc /bin /lib /tmp /usr /dev /sbin \n"
-      );
-    exit(0);
-  }
-  if( !strncmp(argv[2], "/", 2 ) || !strncmp(argv[2], "/etc", 5 ) ||
-    !strncmp(argv[2], "/bin", 5 ) || !strncmp(argv[2], "/lib", 5 ) ||
-    !strncmp(argv[2], "/tmp", 5 ) || !strncmp(argv[2], "/usr", 5 ) ||
-    !strncmp(argv[2], "/dev", 5 ) || !strncmp(argv[2], "/sbin", 6) )
-  {
-    (void)printf("ERROR: Bad top directory %s, see server -?\n",argv[2]);
-    exit(3);
-  }
-  if(chdir(argv[2]) == -1) { 
-    (void)printf("ERROR: Can't Change to directory %s\n",argv[2]);
-    exit(4);
-  } */
+  char char_port[BUFSIZ];
 
   if (argc > 1) {
     for (int i = 1; i < argc; i++) {
       if ( strcmp(argv[i], "--port") == 0 || strcmp(argv[i], "-p") == 0) {
         i++;
         port = atoi(argv[i]);
-        strcpy(char_port, argv[i]);
+        strlcpy(char_port, argv[i], sizeof(char_port));
         if(port < 0 || port > 60000) {
           server_log(ERROR, "Invalid port number try [1,60000]", char_port, 0);
         }
@@ -223,7 +198,7 @@ int main(int argc, char **argv)
   for(i=0; i<32; i++) {
     (void)close(i);  
   }
-  (void)setpgrp();  
+  //(void)setpgrp();  
 
   server_log(LOG, "http server starting", char_port, getpid());
 

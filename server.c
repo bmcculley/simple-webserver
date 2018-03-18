@@ -61,7 +61,7 @@ void server_log(int type, char *s1, char *s2, int num)
       (void)snprintf(logbuffer, sizeof(logbuffer), "ERROR: %s:%s Errno=%d exiting pid=%d", s1, s2, errno, getpid()); 
       break;
     case SORRY: 
-      (void)snprintf(logbuffer, sizeof(logbuffer), "<HTML><BODY><H1>Web Server Sorry: %s %s</H1></BODY></HTML>\r\n", s1, s2);
+      (void)snprintf(logbuffer, sizeof(logbuffer), "<html><body><h1>Web Server Sorry: %s %s</h1></body></html>\r\n", s1, s2);
       (void)write(num,logbuffer,strlen(logbuffer));
       (void)snprintf(logbuffer, sizeof(logbuffer), "SORRY: %s:%s",s1, s2); 
       break;
@@ -158,7 +158,12 @@ int main(int argc, char **argv)
   socklen_t length;
   static struct sockaddr_in cli_addr; 
   static struct sockaddr_in serv_addr;
-  char char_port[BUFSIZ];
+  char char_port[BUFSIZ], char_dir[BUFSIZ];
+
+  // set default port and directory if nothing is passed in
+  port = 8080;
+  strlcpy(char_port, "8080", sizeof(char_port));
+  strlcpy(char_dir, "html", sizeof(char_dir));
 
   if (argc > 1) {
     for (int i = 1; i < argc; i++) {
@@ -172,20 +177,22 @@ int main(int argc, char **argv)
       }
       if ( strcmp(argv[i], "--directory") == 0 || strcmp(argv[i], "-d") == 0) {
         i++;
-        if( !strncmp(argv[i], "/", 2 ) || !strncmp(argv[i], "/etc", 5 ) ||
-          !strncmp(argv[i], "/bin", 5 ) || !strncmp(argv[i], "/lib", 5 ) ||
-          !strncmp(argv[i], "/tmp", 5 ) || !strncmp(argv[i], "/usr", 5 ) ||
-          !strncmp(argv[i], "/dev", 5 ) || !strncmp(argv[i], "/sbin", 6 ) )
-        {
-          (void)printf("ERROR: Bad top directory %s, see server -?\n", argv[i]);
-          exit(3);
-        }
-        if(chdir(argv[i]) == -1) { 
-          (void)printf("ERROR: Can't Change to directory %s\n", argv[i]);
-          exit(4);
-        }
+        strlcpy(char_dir, argv[i], sizeof(char_dir));
       }
     }
+  }
+
+  if( !strncmp(char_dir, "/", 2 ) || !strncmp(char_dir, "/etc", 5 ) ||
+      !strncmp(char_dir, "/bin", 5 ) || !strncmp(char_dir, "/lib", 5 ) ||
+      !strncmp(char_dir, "/tmp", 5 ) || !strncmp(char_dir, "/usr", 5 ) ||
+      !strncmp(char_dir, "/dev", 5 ) || !strncmp(char_dir, "/sbin", 6 ) ) 
+  {
+    (void)printf("ERROR: Bad top directory %s, see server -?\n", char_dir);
+    exit(3);
+  }
+  if(chdir(char_dir) == -1) { 
+    (void)printf("ERROR: Can't Change to directory %s\n", char_dir);
+    exit(4);
   }
 
   if(fork() != 0) {

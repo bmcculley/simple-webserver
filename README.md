@@ -15,7 +15,7 @@ to serve up.
 Building and Using
 ------------------
 
-Known to build on OS X and OpenBSD.
+Known to build on OS X, OpenBSD, ubuntu, and CentOS.
 
 Run the Makefile
 

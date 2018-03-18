@@ -121,9 +121,9 @@ void web(int fd, int hit)
     exit(1);
 }
 
-int start_server(char * char_dir, char * char_port)
+int start_server(int port, char * char_dir, char * char_port)
 {
-  int i, port, pid, listenfd, socketfd, hit;
+  int i, pid, listenfd, socketfd, hit;
   socklen_t length;
   static struct sockaddr_in cli_addr; 
   static struct sockaddr_in serv_addr;

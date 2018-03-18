@@ -29,6 +29,6 @@ typedef struct {
 
 void server_log(int type, char *s1, char *s2, int num);
 void web(int fd, int hit);
-int start_server(char * char_dir, char * char_port);
+int start_server(int port, char * char_dir, char * char_port);
 
 #endif

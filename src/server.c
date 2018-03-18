@@ -54,5 +54,5 @@ int main(int argc, char **argv)
       }
     }
   }
-  start_server(char_dir, char_port);
+  start_server(port, char_dir, char_port);
 }

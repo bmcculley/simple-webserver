@@ -1,4 +1,8 @@
-#  Makefile for server
-server:	server.c
-		gcc server.c -o server
 
+all: server
+
+server:	server.c
+	$(CC) -Wall -std=c99 server.c -o server
+
+clean:
+	rm -f server

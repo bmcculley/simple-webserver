@@ -21,8 +21,8 @@ Run the Makefile
 
 You run the server like this:
 
-`./server -p [port] -d [location to serve pages from] [& - to run in background]`
+`./build/server -p [port] -d [location to serve pages from] [& - to run in background]`
 
 For example, to run it on port 8080, you'd do something like this:
 
-`./server -p 8080 -d ./html &`
+`./build/server -p 8080 -d ./html &`

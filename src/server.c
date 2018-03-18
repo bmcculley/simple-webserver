@@ -6,151 +6,23 @@
  * Inspired by IBM's nweb
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <errno.h>
-#include <string.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+#include "lib/libServer.h"
 
-#define BUFSIZE 8096
-#define ERROR 42
-#define SORRY 43
-#define LOG   44
-
-#ifndef SIGCLD
-#   define SIGCLD SIGCHLD
-#endif
-
-struct {
-  char *ext;
-  char *filetype;
-} extensions [] = {
-  {"gif",  "image/gif"    },  
-  {"jpg",  "image/jpeg"   }, 
-  {"jpeg", "image/jpeg"   },
-  {"png",  "image/png"    }, 
-  {"ico",  "image/x-icon" }, 
-  {"zip",  "image/zip"    },  
-  {"gz",   "image/gz"     },  
-  {"tar",  "image/tar"    },  
-  {"htm",  "text/html"    },  
-  {"html", "text/html"    },  
-  {"php",  "image/php"    },  
-  {"cgi",  "text/cgi"     },  
-  {"asp",  "text/asp"     },  
-  {"jsp",  "image/jsp"    },  
-  {"xml",  "text/xml"     },  
-  {"js",   "text/js"      },
-  {"css",  "test/css"     }, 
-  {0,0} 
-};
-
-void server_log(int type, char *s1, char *s2, int num)
-{
-  int fd ;
-  char logbuffer[BUFSIZE*2];
-
-  switch (type) {
-    case ERROR: 
-      (void)snprintf(logbuffer, sizeof(logbuffer), "ERROR: %s:%s Errno=%d exiting pid=%d", s1, s2, errno, getpid()); 
-      break;
-    case SORRY: 
-      (void)snprintf(logbuffer, sizeof(logbuffer), "<html><body><h1>Web Server Sorry: %s %s</h1></body></html>\r\n", s1, s2);
-      (void)write(num,logbuffer,strlen(logbuffer));
-      (void)snprintf(logbuffer, sizeof(logbuffer), "SORRY: %s:%s",s1, s2); 
-      break;
-    case LOG: 
-      (void)snprintf(logbuffer, sizeof(logbuffer), "INFO: %s:%s:%d",s1, s2,num); 
-      break;
-  }  
-  
-  if((fd = open("server.log", O_CREAT| O_WRONLY | O_APPEND,0644)) >= 0) {
-    (void)write(fd,logbuffer,strlen(logbuffer)); 
-    (void)write(fd,"\n",1);    
-    (void)close(fd);
-  }
-  if(type == ERROR || type == SORRY) exit(3);
+void help_msg(char * progname) {
+    printf("This is a simple web server to serve static files.\n" \
+    "\n" \
+    "Usage: %s -p 8080 -d html\n" \
+    "\n" \
+    "    -h, --help              Display this help message.\n" \
+    "    -p, --port VALUE        The port for the server to listen on. \n" \
+    "                            Defaults to 8080.\n" \
+    "    -d, --directory VALUE   The directory to serve files from.\n" \
+    "                            Defaults to html.\n" \
+    "\n" \
+    "The source code for this can be found on github: \n" \
+    "https://github.com/bmcculley/simple-webserver\n",
+    progname );
 }
-
-void web(int fd, int hit)
-{
-  int j, file_fd, buflen, len;
-  long i, ret;
-  char * fstr;
-  static char buffer[BUFSIZE+1];
-
-  ret = read(fd, buffer, BUFSIZE); 
-  if(ret == 0 || ret == -1) {
-    server_log(SORRY,"failed to read browser request","",fd);
-  }
-  if(ret > 0 && ret < BUFSIZE) {
-    buffer[ret]=0;  
-  }
-  else buffer[0]=0;
-
-  for(i=0; i < ret; i++) {
-    if(buffer[i] == '\r' || buffer[i] == '\n') {
-      buffer[i]='*';
-    }
-  }
-  server_log(LOG, "request", buffer, hit);
-
-  if( strncmp(buffer,"GET ",4) && strncmp(buffer,"get ",4) ) {
-    server_log(SORRY, "Only simple GET operation supported", buffer, fd);
-  }
-
-  for(i=4;i<BUFSIZE;i++) { 
-    if(buffer[i] == ' ') { 
-      buffer[i] = 0;
-      break;
-    }
-  }
-
-  for(j=0; j < i - 1; j++) {
-    if(buffer[j] == '.' && buffer[j+1] == '.') {
-      server_log(SORRY, "Parent directory (..) path names not supported", buffer, fd);
-    }
-  }
-
-  if( !strncmp(&buffer[0], "GET /\0",6) || !strncmp(&buffer[0], "get /\0",6) ) {
-    (void)strlcpy(buffer, "GET /index.html", sizeof(buffer));
-  }
-
-  buflen = strlen(buffer);
-  fstr = (char *)0;
-
-  for(i=0; extensions[i].ext != 0; i++) {
-    len = strlen(extensions[i].ext);
-    if( !strncmp(&buffer[buflen-len], extensions[i].ext, len)) {
-      fstr = extensions[i].filetype;
-      break;
-    }
-  }
-  if(fstr == 0) server_log(SORRY,"file extension type not supported",buffer,fd);
-
-  if(( file_fd = open(&buffer[5],O_RDONLY)) == -1) 
-    server_log(SORRY, "failed to open file",&buffer[5],fd);
-
-  server_log(LOG, "SEND", &buffer[5], hit);
-
-  (void)snprintf(buffer, sizeof(buffer), "HTTP/1.0 200 OK\r\nContent-Type: %s\r\n\r\n", fstr);
-  (void)write(fd, buffer, strlen(buffer));
-
-  while (  (ret = read(file_fd, buffer, BUFSIZE)) > 0 ) {
-    (void)write(fd,buffer,ret);
-  }
-#ifdef LINUX
-  sleep(1);
-#endif
-  exit(1);
-}
-
 
 int main(int argc, char **argv)
 {
@@ -178,6 +50,10 @@ int main(int argc, char **argv)
       if ( strcmp(argv[i], "--directory") == 0 || strcmp(argv[i], "-d") == 0) {
         i++;
         strlcpy(char_dir, argv[i], sizeof(char_dir));
+      }
+      if ( strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
+        help_msg(argv[0]);
+        exit(0);
       }
     }
   }

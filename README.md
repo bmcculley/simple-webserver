@@ -12,8 +12,10 @@ here in case someone wants to see a small c-based webserver in use. Basic
 socket use examples are in here from nweb. Also included are two small pages 
 to serve up.
 
-Example
--------
+Building and Using
+------------------
+
+Known to build on OS X and OpenBSD.
 
 Run the Makefile
 

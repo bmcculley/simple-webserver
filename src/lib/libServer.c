@@ -89,7 +89,7 @@ void web(int fd, int hit)
   }
 
   if( !strncmp(&buffer[0], "GET /\0",6) || !strncmp(&buffer[0], "get /\0",6) ) {
-    (void)strlcpy(buffer, "GET /index.html", sizeof(buffer));
+    (void)strncpy(buffer, "GET /index.html", sizeof(buffer));
   }
 
   buflen = strlen(buffer);

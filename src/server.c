@@ -34,22 +34,22 @@ int main(int argc, char **argv)
 
   // set default port and directory if nothing is passed in
   port = 8080;
-  strlcpy(char_port, "8080", sizeof(char_port));
-  strlcpy(char_dir, "html", sizeof(char_dir));
+  strncpy(char_port, "8080", sizeof(char_port));
+  strncpy(char_dir, "html", sizeof(char_dir));
 
   if (argc > 1) {
     for (int i = 1; i < argc; i++) {
       if ( strcmp(argv[i], "--port") == 0 || strcmp(argv[i], "-p") == 0) {
         i++;
         port = atoi(argv[i]);
-        strlcpy(char_port, argv[i], sizeof(char_port));
+        strncpy(char_port, argv[i], sizeof(char_port));
         if(port < 0 || port > 60000) {
           server_log(ERROR, "Invalid port number try [1,60000]", char_port, 0);
         }
       }
       if ( strcmp(argv[i], "--directory") == 0 || strcmp(argv[i], "-d") == 0) {
         i++;
-        strlcpy(char_dir, argv[i], sizeof(char_dir));
+        strncpy(char_dir, argv[i], sizeof(char_dir));
       }
       if ( strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
         help_msg(argv[0]);
